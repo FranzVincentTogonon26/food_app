@@ -5,6 +5,7 @@
     "@expo-google-fonts/dm-sans": "^0.4.2",
     "@expo-google-fonts/roboto": "^0.4.3",
     "@food_app/shared": "*",
+    "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~57.0.31",
     "expo-blur": "~57.0.3",
     "expo-constants": "~57.0.22",
