@@ -1,0 +1,17 @@
+{
+  "name": "food_app",
+  "private": true,
+  "workspaces": [
+    "shared",
+    "server",
+    "mobile"
+  ],
+  "engine": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev:mobile": "npm run start -w mobile",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  }
+}
