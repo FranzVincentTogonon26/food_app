@@ -12,6 +12,10 @@ import { useEffect, type ReactNode } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { ToastHost } from "@/components/feedback/Toast";
+import "@/lib/remote";
+import { useServerSync } from "@/lib/sync";
+import { useSessionHydrated } from "@/store/sessions";
+import { useHydrated } from "@/store/store";
 import { fontAssets } from "@/theme/fonts";
 import { ThemeProvider, useTheme } from "@/theme/theme";
 
@@ -20,7 +24,9 @@ SplashScreen.setOptions({ duration: 400, fade: true });
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(fontAssets);
-  const ready = fontsLoaded || !!fontError;
+  const hydrated = useHydrated();
+  const sessionHydrated = useSessionHydrated();
+  const ready = (fontsLoaded || !!fontError) && hydrated && sessionHydrated;
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
@@ -32,12 +38,19 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
         <NavTheme>
+          <AccountSync />
           <Stack screenOptions={{ headerShown: false }} />
           <ToastHost />
         </NavTheme>
       </ThemeProvider>
     </GestureHandlerRootView>
   );
+}
+
+/** The menu and account data. Runs after hydration. */
+function AccountSync() {
+  useServerSync();
+  return null;
 }
 
 function NavTheme({ children }: { children: ReactNode }) {
