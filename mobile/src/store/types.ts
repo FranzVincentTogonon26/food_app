@@ -83,6 +83,8 @@ export type User = {
   provider?: "apple" | "google";
   /** profile photo URL from the provider */
   photo?: string;
+  /** account role from the server */
+  role?: import("@food_app/shared").Role;
 };
 
 export type Prefs = {

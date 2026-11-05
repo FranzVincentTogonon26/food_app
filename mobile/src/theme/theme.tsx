@@ -1,16 +1,10 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useColorScheme } from "react-native";
 
-import {
-  dark as darkPalette,
-  light as lightPalette,
-  type Palette,
-} from "./tokens";
+import { useApp } from "@/store/store";
+import { dark as darkPalette, light as lightPalette, type Palette } from "./tokens";
 
-type ThemeValue = {
-  c: Palette;
-  dark: boolean;
-};
+type ThemeValue = { c: Palette; dark: boolean };
 
 const ThemeContext = createContext<ThemeValue>({
   c: lightPalette,
@@ -18,15 +12,20 @@ const ThemeContext = createContext<ThemeValue>({
 });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  const pref = useApp((s) => s.theme);
   const system = useColorScheme();
-  const isDark = system === "dark";
+
+  const isDark =
+    (pref ?? (system === "dark" ? "dark" : "light")) === "dark";
 
   const value = useMemo(
     () => ({ c: isDark ? darkPalette : lightPalette, dark: isDark }),
     [isDark],
   );
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+  );
 }
 
 export const useTheme = () => useContext(ThemeContext);
