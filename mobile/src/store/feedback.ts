@@ -1,4 +1,4 @@
-import { Dimensions, type View } from "react-native";
+import { Dimensions, View } from "react-native";
 import { create } from "zustand";
 
 export type ToastData = {
@@ -63,13 +63,13 @@ export function hideToast() {
 export const bumpCart = () =>
   useFeedback.setState((s) => ({ bump: s.bump + 1 }));
 
-const targets: { current: View | null }[] = [];
+const targets: { current: any | null }[] = [];
 
 /**
  * Register a cart icon as the fly-to-cart destination. Most recent registration
  * wins.
  */
-export function registerCartTarget(ref: { current: View | null }) {
+export function registerCartTarget(ref: { current: any | null }) {
   targets.push(ref);
   return () => {
     const i = targets.lastIndexOf(ref);
@@ -78,11 +78,11 @@ export function registerCartTarget(ref: { current: View | null }) {
 }
 
 function measure(
-  v: View | null | undefined,
+  v: any,
 ): Promise<{ x: number; y: number; w: number; h: number } | null> {
   return new Promise((resolve) => {
     if (!v || typeof v.measureInWindow !== "function") return resolve(null);
-    v.measureInWindow((x, y, w, h) => resolve(w || h ? { x, y, w, h } : null));
+    v.measureInWindow((x: number, y: number, w: number, h: number) => resolve(w || h ? { x, y, w, h } : null));
   });
 }
 

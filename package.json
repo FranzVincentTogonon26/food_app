@@ -10,7 +10,8 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev:mobile": "npm run start -w mobile",
+    "postinstall": "node scripts/patch-expo-cli.js",
+    "dev:mobile": "npm run start -w mobile -- --tunnel",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present"
   }

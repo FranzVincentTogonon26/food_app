@@ -53,7 +53,14 @@ export const pwScore = (pw: string) =>
 
 export type AuthPath = "/login" | "/register" | "/forgot";
 
-const AUTH_ROUTES = new Set(["login", "register", "forgot"]);
+const AUTH_ROUTES = new Set([
+  "login",
+  "register",
+  "forgot",
+  "(auth)/login",
+  "(auth)/register",
+  "(auth)/forgot",
+]);
 const isAuthRoute = (name: string) => AUTH_ROUTES.has(name);
 
 /** The screen a guard sent the user here from, if any. */
@@ -142,6 +149,9 @@ export function useExitAuth() {
       setTimeout(() => useAuthForm.getState().reset(), 700);
     },
     /** "Browse as guest" / "Back to cart" - leave without signing in. */
-    guest: () => leave(),
+    guest: () => {
+      useSession.getState().setGuest(true);
+      leave();
+    },
   };
 }

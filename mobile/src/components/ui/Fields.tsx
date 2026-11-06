@@ -1,4 +1,4 @@
-import { forwardRef, useState, type ReactNode } from "react";
+import { forwardRef, useState, type ElementRef, type ReactNode } from "react";
 import {
   TextInput,
   View,
@@ -31,7 +31,7 @@ type Props = Omit<TextInputProps, "style"> & {
   multilineRows?: number;
 };
 
-export const Field = forwardRef<TextInput, Props>(function Field(
+export const Field = forwardRef<ElementRef<typeof TextInput>, Props>(function Field(
   {
     icon,
     error,

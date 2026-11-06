@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ElementRef } from "react";
 import { StyleSheet, View, type TextInput } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -37,8 +37,8 @@ export default function RegisterScreen() {
   const { finish, finishProvider } = useExitAuth();
   const [busy, setBusy] = useState(false);
 
-  const emailRef = useRef<TextInput>(null);
-  const pwRef = useRef<TextInput>(null);
+  const emailRef = useRef<ElementRef<typeof TextInput>>(null);
+  const pwRef = useRef<ElementRef<typeof TextInput>>(null);
 
   const score = pwScore(pw);
   const ready = terms && pw.length >= 8 && !!name.trim();

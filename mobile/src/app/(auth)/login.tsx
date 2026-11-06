@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ElementRef } from "react";
 import { StyleSheet, View, type TextInput } from "react-native";
 
 import {
@@ -27,7 +27,7 @@ export default function LoginScreen() {
   const { finish, finishProvider, guest, next } = useExitAuth();
   const [busy, setBusy] = useState(false);
 
-  const pwRef = useRef<TextInput>(null);
+  const pwRef = useRef<ElementRef<typeof TextInput>>(null);
   const pending = next === "/checkout";
 
   const login = async () => {

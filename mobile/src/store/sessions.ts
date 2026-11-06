@@ -15,10 +15,13 @@ type SessionState = {
   ready: boolean;
   /** the server confirmed role this launch */
   roleConfirmed: boolean;
+  /** browsing as a guest without signing in */
+  isGuest: boolean;
   signIn: (user: User) => void;
   updateUser: (patch: Partial<User>) => void;
   /** the server's word on the account's role */
   setRole: (role: Role) => void;
+  setGuest: (guest: boolean) => void;
   signout: () => void;
   setReady: () => void;
 };
@@ -30,16 +33,24 @@ export const useSession = create<SessionState>()(
       role: "user",
       ready: false,
       roleConfirmed: false,
+      isGuest: false,
       signIn: (user) =>
         set((s) => {
           // if switching accounts, drop roleConfirmed so the new account re-validates
           const sameAccount = s.user?.vid === user.vid;
-          return { user, role: user.role, roleConfirmed: sameAccount };
+          return {
+            user,
+            role: user.role ?? s.role,
+            roleConfirmed: sameAccount,
+            isGuest: false,
+          };
         }),
       updateUser: (patch) =>
         set((s) => ({ user: s.user ? { ...s.user, ...patch } : null })),
       setRole: (role) => set({ role, roleConfirmed: true }),
-      signout: () => set({ user: null, role: "user", roleConfirmed: false }),
+      setGuest: (isGuest) => set({ isGuest }),
+      signout: () =>
+        set({ user: null, role: "user", roleConfirmed: false, isGuest: false }),
       setReady: () => set({ ready: true }),
     }),
     {

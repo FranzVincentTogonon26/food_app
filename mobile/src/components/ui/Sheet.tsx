@@ -98,8 +98,8 @@ function SheetBody({
 
   const y = useSharedValue(height);
   const scrim = useSharedValue(0);
-  const scrollRef = useRef<ScrollView>(null);
-  const innerRef = useRef<View>(null);
+  const scrollRef = useRef<any>(null);
+  const innerRef = useRef<any>(null);
   const viewport = useRef({ top: 0, h: 0 });
 
   const [kbUp, setKbUp] = useState(false);
@@ -238,7 +238,7 @@ function SheetBody({
         {scroll ? (
           <ScrollView
             ref={scrollRef}
-            innerViewRef={innerRef as RefObject<View>}
+            innerViewRef={innerRef}
             onLayout={(e) => (viewport.current.h = e.nativeEvent.layout.height)}
             onScroll={(e) =>
               (viewport.current.top = e.nativeEvent.contentOffset.y)

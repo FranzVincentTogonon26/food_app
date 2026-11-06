@@ -51,13 +51,12 @@ export function T({
         : bodyFamily(w),
     fontSize: s,
     color,
+    ...(lh ? { lineHeight: Math.round(s * lh * 10) / 10 } : {}),
+    ...(ls ? { letterSpacing: s * ls } : {}),
+    ...(upper ? { textTransform: "uppercase" as const } : {}),
+    ...(center ? { textAlign: "center" as const } : {}),
+    ...(tabular ? { fontVariant: ["tabular-nums"] as const } : {}),
   };
-
-  if (lh) base.lineHeight = Math.round(s * lh * 10) / 10;
-  if (ls) base.letterSpacing = s * ls;
-  if (upper) base.textTransform = "uppercase";
-  if (center) base.textAlign = "center";
-  if (tabular) base.fontVariant = ["tabular-nums"];
 
   return <RNText maxFontSizeMultiplier={1.25} {...rest} style={[base, style]} />;
 }

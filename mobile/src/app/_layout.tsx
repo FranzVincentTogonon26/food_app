@@ -2,8 +2,8 @@ import { useFonts } from "expo-font";
 import {
   DarkTheme,
   DefaultTheme,
-  Stack,
   ThemeProvider as NavThemeProvider,
+  Stack,
 } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { ToastHost } from "@/components/feedback/Toast";
+import { useAccountSession } from "@/lib/accounts";
 import "@/lib/remote";
 import { useServerSync } from "@/lib/sync";
 import { useSessionHydrated } from "@/store/sessions";
@@ -39,7 +40,15 @@ export default function RootLayout() {
       <ThemeProvider>
         <NavTheme>
           <AccountSync />
-          <Stack screenOptions={{ headerShown: false }} />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen
+              name="welcome"
+              options={{ animation: "fade", gestureEnabled: false }}
+            />
+            <Stack.Screen name="(auth)/login" options={{ animation: "fade" }} />
+            <Stack.Screen name="(auth)/register" />
+            <Stack.Screen name="(auth)/forgot" />
+          </Stack>
           <ToastHost />
         </NavTheme>
       </ThemeProvider>
@@ -49,6 +58,7 @@ export default function RootLayout() {
 
 /** The menu and account data. Runs after hydration. */
 function AccountSync() {
+  useAccountSession();
   useServerSync();
   return null;
 }

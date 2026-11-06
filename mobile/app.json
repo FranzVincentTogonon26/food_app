@@ -37,7 +37,9 @@
         }
       ],
       "expo-image",
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": false,
