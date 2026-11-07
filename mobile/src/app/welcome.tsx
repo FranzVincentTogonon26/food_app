@@ -3,16 +3,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import {
-  StyleSheet,
-  View,
-  type StyleProp,
-  type ViewStyle,
-} from "react-native";
+import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   FadeIn,
   FadeOut,
+  LinearTransition,
+  interpolateColor,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -133,6 +130,33 @@ function SlideBackdrop({ uri, active }: { uri: string; active: boolean }) {
   );
 }
 
+function IndicatorDot({ active }: { active: boolean }) {
+  const progress = useSharedValue(active ? 1 : 0);
+
+  useEffect(() => {
+    progress.set(
+      withTiming(active ? 1 : 0, {
+        duration: 300,
+        easing: ease.out,
+      }),
+    );
+  }, [active, progress]);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    const p = progress.get();
+    return {
+      width: 6 + 22 * p,
+      backgroundColor: interpolateColor(
+        p,
+        [0, 1],
+        ["rgba(255, 255, 255, 0.25)", "#FF6525"],
+      ),
+    };
+  });
+
+  return <Animated.View style={[styles.indicatorDot, animatedStyle]} />;
+}
+
 function splitWords(text: string) {
   return text.split(/\s+/).filter(Boolean);
 }
@@ -180,18 +204,10 @@ function Reveal({
     transform: [{ translateY: ty.get() }],
   }));
 
-  return (
-    <Animated.View style={[style, animated]}>{children}</Animated.View>
-  );
+  return <Animated.View style={[style, animated]}>{children}</Animated.View>;
 }
 
-function SlideCopy({
-  slide,
-  animate,
-}: {
-  slide: Slide;
-  animate: boolean;
-}) {
+function SlideCopy({ slide, animate }: { slide: Slide; animate: boolean }) {
   const line1 = splitWords(slide.t1);
   const line2 = splitWords(slide.t2);
   const sub = splitWords(slide.sub);
@@ -304,6 +320,22 @@ export default function Welcome() {
   const contentReady = stage !== "intro";
   const animateWords = stage === "words" && index === 0;
 
+  const [rowWidth, setRowWidth] = useState(0);
+  const expandProgress = useSharedValue(last ? 1 : 0);
+
+  useEffect(() => {
+    expandProgress.set(
+      reduced
+        ? last
+          ? 1
+          : 0
+        : withTiming(last ? 1 : 0, {
+            duration: 320,
+            easing: ease.out,
+          }),
+    );
+  }, [expandProgress, last, reduced]);
+
   // Final header position (same placement as before).
   const topY = Math.max(insets.top + 8, 52);
   const bottomY = Math.max(insets.bottom + 14, 24);
@@ -340,11 +372,18 @@ export default function Welcome() {
     };
   }, [maskEndSide, maskStartSide, height, width]);
 
-  // The photograph fills the square and settles from a subtle zoom while the
-  // mask opens, so the card already feels like a small version of the page.
-  const maskInnerStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: 1.06 - 0.06 * maskExpand.get() }],
-  }));
+  // The square mask expands and reveals the backdrop beneath it.
+  // The image itself stays stationary at full screen size without zooming in.
+  const maskInnerStyle = useAnimatedStyle(() => {
+    const p = maskExpand.get();
+    const side = maskStartSide + (maskEndSide - maskStartSide) * p;
+    return {
+      width,
+      height,
+      left: (side - width) / 2,
+      top: (side - height) / 2,
+    };
+  }, [maskEndSide, maskStartSide, height, width]);
 
   const blurStyle = useAnimatedStyle(() => ({
     opacity: 1 - maskExpand.get() * maskExpand.get(),
@@ -372,6 +411,46 @@ export default function Welcome() {
   const bottomStyle = useAnimatedStyle(() => ({
     opacity: bottomOpacity.get(),
   }));
+
+  const buttonAnimatedStyle = useAnimatedStyle(() => {
+    const p = expandProgress.get();
+    const targetWidth = rowWidth || Math.min(520, width - 40) - 48;
+    const currentWidth = 54 + (targetWidth - 54) * p;
+
+    return {
+      width: currentWidth,
+      backgroundColor: interpolateColor(p, [0, 1], ["#181310", "#FF6525"]),
+      borderColor: interpolateColor(
+        p,
+        [0, 1],
+        ["#FF6525", "rgba(255, 101, 37, 0)"],
+      ),
+    };
+  }, [rowWidth, width]);
+
+  const circleContentStyle = useAnimatedStyle(() => {
+    const p = expandProgress.get();
+    return {
+      opacity: 1 - p,
+      transform: [{ scale: 1 - 0.2 * p }],
+    };
+  });
+
+  const expandedContentStyle = useAnimatedStyle(() => {
+    const p = expandProgress.get();
+    return {
+      opacity: p,
+      transform: [{ scale: 0.88 + 0.12 * p }],
+    };
+  });
+
+  const indicatorsStyle = useAnimatedStyle(() => {
+    const p = expandProgress.get();
+    return {
+      opacity: 1 - p,
+      transform: [{ translateX: -10 * p }],
+    };
+  });
 
   // Opening choreography: logo appears big in the centre, holds, then shrinks
   // and slides into the header while the square image mask opens.
@@ -418,10 +497,7 @@ export default function Welcome() {
     );
 
     maskOpacity.set(
-      withDelay(
-        LOGO_HOLD,
-        withTiming(1, { duration: 260, easing: ease.out }),
-      ),
+      withDelay(LOGO_HOLD, withTiming(1, { duration: 260, easing: ease.out })),
     );
     maskExpand.set(
       withDelay(
@@ -521,24 +597,15 @@ export default function Welcome() {
     });
 
   const pageEntering =
-    reduced || animateWords
-      ? undefined
-      : FadeIn.duration(650).easing(ease.out);
+    reduced || animateWords ? undefined : FadeIn.duration(650).easing(ease.out);
 
   return (
     <View style={styles.screen}>
       {/* 1. Square image mask / final full-screen backdrop. */}
-      <Animated.View
-        style={[styles.mask, maskStyle]}
-        pointerEvents="none"
-      >
+      <Animated.View style={[styles.mask, maskStyle]} pointerEvents="none">
         <Animated.View style={[styles.maskInner, maskInnerStyle]}>
           {SLIDES.map((item, i) => (
-            <SlideBackdrop
-              key={item.img}
-              uri={item.img}
-              active={i === index}
-            />
+            <SlideBackdrop key={item.img} uri={item.img} active={i === index} />
           ))}
 
           {/* Soft-focus copy that clears up as the square opens. */}
@@ -664,36 +731,62 @@ export default function Welcome() {
             ]}
             pointerEvents={contentReady ? "box-none" : "none"}
           >
-            <View style={styles.actionRow}>
-              <View style={styles.indicators}>
-                {SLIDES.map((_, i) => (
-                  <Press
-                    key={i}
-                    onPress={() => goTo(i)}
-                    hitSlop={10}
-                    accessibilityLabel={`Slide ${i + 1}`}
-                  >
-                    <View
-                      style={[
-                        styles.indicatorDot,
-                        i === index && styles.indicatorActive,
-                      ]}
-                    />
-                  </Press>
-                ))}
-              </View>
+            <View
+              style={styles.actionRow}
+              onLayout={(e) => setRowWidth(e.nativeEvent.layout.width)}
+            >
+              <Animated.View
+                style={[styles.indicatorsContainer, indicatorsStyle]}
+                pointerEvents={last ? "none" : "auto"}
+              >
+                <View style={styles.indicators}>
+                  {SLIDES.map((_, i) => (
+                    <Press
+                      key={i}
+                      onPress={() => goTo(i)}
+                      hitSlop={10}
+                      accessibilityLabel={`Slide ${i + 1}`}
+                    >
+                      <IndicatorDot active={i === index} />
+                    </Press>
+                  ))}
+                </View>
+              </Animated.View>
 
               <Press
                 onPress={next}
-                scaleTo={0.92}
+                scaleTo={last ? 0.96 : 0.92}
                 hitSlop={10}
                 accessibilityLabel={last ? "Get started" : "Next slide"}
               >
-                <View style={styles.arrowGlow}>
-                  <View style={styles.arrowCircle}>
+                <Animated.View
+                  style={[styles.actionButton, buttonAnimatedStyle]}
+                >
+                  <Animated.View
+                    style={[
+                      StyleSheet.absoluteFill,
+                      styles.circleContent,
+                      circleContentStyle,
+                    ]}
+                    pointerEvents="none"
+                  >
                     <Icon name="arrow_forward" size={24} color="#FF6525" />
-                  </View>
-                </View>
+                  </Animated.View>
+
+                  <Animated.View
+                    style={[
+                      StyleSheet.absoluteFill,
+                      styles.expandedContent,
+                      expandedContentStyle,
+                    ]}
+                    pointerEvents="none"
+                  >
+                    <T w={700} s={16} c="#FFFFFF" numberOfLines={1}>
+                      Get started
+                    </T>
+                    <Icon name="arrow_forward" size={20} color="#FFFFFF" />
+                  </Animated.View>
+                </Animated.View>
               </Press>
             </View>
 
@@ -731,10 +824,6 @@ const styles = StyleSheet.create({
   },
   maskInner: {
     position: "absolute",
-    left: 0,
-    top: 0,
-    right: 0,
-    bottom: 0,
   },
   headerContainer: {
     position: "absolute",
@@ -815,9 +904,18 @@ const styles = StyleSheet.create({
     gap: 22,
   },
   actionRow: {
+    position: "relative",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
+    minHeight: 54,
+    width: "100%",
+  },
+  indicatorsContainer: {
+    position: "absolute",
+    left: 0,
+    height: 54,
+    justifyContent: "center",
   },
   indicators: {
     flexDirection: "row",
@@ -825,37 +923,33 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   indicatorDot: {
-    width: 6,
     height: 4,
     borderRadius: 2,
     backgroundColor: "rgba(255, 255, 255, 0.25)",
   },
-  indicatorActive: {
-    width: 28,
-    backgroundColor: "#FF6525",
-  },
-  arrowGlow: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "rgba(255, 101, 37, 0.16)",
+  actionButton: {
+    height: 54,
+    borderRadius: 27,
+    borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
-  },
-  arrowCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#181310",
-    borderWidth: 2.5,
-    borderColor: "#FF6525",
-    alignItems: "center",
-    justifyContent: "center",
+    overflow: "hidden",
     shadowColor: "#FF6525",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 10,
     elevation: 6,
+    top:12
+  },
+  circleContent: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  expandedContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
   signInLink: {
     alignSelf: "center",
